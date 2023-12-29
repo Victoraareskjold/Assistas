@@ -165,7 +165,7 @@ const ChatScreen = ({ route, navigation }) => {
   };
 
   const sendAgreementCard = async () => {
-    const agreementId = Math.random().toString(36).substring(7);
+    const agreementId = Math.random().toString(36).substring(7); // Unique ID for the message
     const message = {
       _id: agreementId,
       text: "agreement proposal",
@@ -177,59 +177,48 @@ const ChatScreen = ({ route, navigation }) => {
       status: "pending",
     };
 
-    console.log("Sending new agreement with ID:", agreementId); // For debugging
+    onSend([message]); // Send message to GiftedChat
+    setAgreementMessageId(agreementId); // Saving the new agreement message ID for future reference
 
-    // Lagre meldingen i GiftedChat og Firestore
-    onSend([message]);
-    setAgreementMessageId(agreementId); // Lagrer ID for senere bruk
+    // Oppretter et nytt tilbud i "offers" samlingen
+    const offerRef = doc(db, `chats/${chatId}/offers`, agreementId);
+    await setDoc(offerRef, {
+      status: "pending", // Initial status
+      createdAt: new Date(),
+      proposalData: {}, // Empty data, will be filled later
+    });
   };
 
   const sendProposal = async (selectedPriceType, price) => {
-    // Validering av input
+    // Sjekk for nødvendig input
     if (!selectedPriceType || !price) {
-      alert("Vennligst velg en pristype og oppgi en pris.");
+      console.error("Missing required fields.");
       return;
     }
 
-    // Opprette en avtaleforslagmelding
-    const proposalMessage = {
-      _id: Math.random().toString(36).substring(7), // generer en unik ID
-      text: `Avtaleforslag: ${selectedPriceType} for ${price} kr`,
-      createdAt: new Date(),
-      user: {
-        _id: auth.currentUser.uid,
-        // ... annen brukerinfo
-      },
-      customType: "agreementProposal",
-      proposalData: {
-        selectedPriceType,
-        price,
-      },
-    };
-
+    // Sjekk at vi har en gyldig agreementMessageId
     if (!agreementMessageId) {
-      console.error("No agreement message to update.");
+      console.error("Invalid agreementMessageId. Cannot update.");
       return;
     }
 
-    console.log("Updating message with ID:", agreementMessageId); // For debugging
-
+    // Logg ID og prøv å oppdatere
+    console.log("Updating offer with ID:", agreementMessageId);
     try {
-      const agreementMessageRef = doc(
-        db,
-        `chats/${chatId}/messages`,
-        agreementMessageId
-      );
-      await updateDoc(agreementMessageRef, {
+      const offerRef = doc(db, `chats/${chatId}/offers`, agreementMessageId);
+      await updateDoc(offerRef, {
         "proposalData.selectedPriceType": selectedPriceType,
         "proposalData.price": price,
         status: "submitted",
       });
-      console.log("Updated agreement successfully");
+
+      console.log("Offer updated successfully.");
     } catch (error) {
-      console.error("Error updating document:", error);
+      console.error("Error updating offer:", error);
     }
   };
+
+  /* Undo en gang til for at det funker!! */
 
   const sendStartWorkRequest = () => {
     const existingSession = messages.find(

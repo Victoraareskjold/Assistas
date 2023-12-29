@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import colors from "../../styles/colors";
 
-const AgreementProposalCard = ({ sendProposal }) => {
+const AgreementProposalCard = ({ sendProposal, status, proposalData }) => {
   const [selectedPriceType, setSelectedPriceType] = useState(null);
   const [price, setPrice] = useState("");
 
