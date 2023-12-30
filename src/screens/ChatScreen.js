@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Touchable,
+  ActivityIndicator,
 } from "react-native";
 import { auth, db } from "../../firebase";
 import {
@@ -40,6 +41,7 @@ const ChatScreen = ({ route, navigation }) => {
   const [isUserAdCreator, setIsUserAdCreator] = useState(false);
   const [agreementMessageId, setAgreementMessageId] = useState(null);
   const [proposalData, setProposalData] = useState({});
+  const [isAgreementAccepted, setIsAgreementAccepted] = useState(false);
 
   useEffect(() => {
     const fetchOtherParticipantInfo = async () => {
@@ -147,6 +149,18 @@ const ChatScreen = ({ route, navigation }) => {
     return () => unsubscribe();
   }, [chatId]);
 
+  useEffect(() => {
+    // This effect would listen to changes in messages to check for an accepted agreement
+    const acceptedAgreement = messages.find(
+      (message) =>
+        message.customType === "agreementProposal" &&
+        message.status === "accepted"
+    );
+    if (acceptedAgreement) {
+      setIsAgreementAccepted(true);
+    }
+  }, [messages]);
+
   const onSend = async (newMessages = []) => {
     const senderId = auth.currentUser.uid;
     const senderDocRef = doc(db, "users", senderId);
@@ -220,6 +234,30 @@ const ChatScreen = ({ route, navigation }) => {
       updateAgreementStatusInState(messageRef.id, "submitted");
     } catch (error) {
       console.error("Error submitting offer:", error);
+    }
+  };
+
+  const acceptProposal = async (proposalId) => {
+    console.log("Accepting proposal with ID: ", proposalId); // Legg til denne for å sjekke ID
+
+    if (!proposalId) {
+      console.error("Missing proposal ID.");
+      return;
+    }
+
+    try {
+      // Referanse til meldingen som representerer tilbudet
+      const messageRef = doc(db, `chats/${chatId}/messages`, proposalId);
+
+      // Oppdater status til 'accepted'
+      await updateDoc(messageRef, {
+        status: "accepted",
+      });
+
+      // Oppdater appens tilstand til å reflektere at avtalen er akseptert
+      setIsAgreementAccepted(true);
+    } catch (error) {
+      console.error("Error accepting offer:", error);
     }
   };
 
@@ -380,14 +418,14 @@ const ChatScreen = ({ route, navigation }) => {
   }, [chatId]);
 
   const CustomButtons = () => (
-    <View>
+    <View style={{ backgroundColor: "none" }}>
       {!isUserAdCreator && !doesAgreementRequestExist() && (
         <TouchableOpacity onPress={sendAgreementCard} style={styles.requestBtn}>
           <Text>Inngå Avtale</Text>
         </TouchableOpacity>
       )}
 
-      {!isUserAdCreator && !doesWorkSessionExist() && (
+      {!isUserAdCreator && isAgreementAccepted && !doesWorkSessionExist() && (
         <TouchableOpacity
           onPress={sendStartWorkRequest}
           style={styles.requestBtn}
@@ -409,6 +447,7 @@ const ChatScreen = ({ route, navigation }) => {
           status={currentMessage.status} // Send statusen for denne meldinge
           proposalData={currentMessage.proposalData || {}}
           sendProposal={sendProposal}
+          onAccept={() => acceptProposal(currentMessage._id)} // Pass inn riktig ID fra currentMessage eller annen logikk for å hente ID
           isUserAdCreator={isUserAdCreator}
         />
       );
@@ -505,7 +544,7 @@ const styles = StyleSheet.create({
   requestBtn: {
     backgroundColor: colors.primary,
     marginHorizontal: 32,
-    marginBottom: 12,
+    marginTop: 12,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 5,

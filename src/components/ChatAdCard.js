@@ -18,7 +18,7 @@ const ChatAdCard = ({ adData }) => {
       />
       <View>
         <Text style={styles.adTitle}>{adData.overskrift}</Text>
-        <Text style={styles.adTitle}>{adData.sted}</Text>
+        <Text style={styles.adBody}>{adData.sted}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -31,16 +31,20 @@ const styles = StyleSheet.create({
     borderColor: "lightgrey",
     zIndex: 1,
     flexDirection: "row",
-    alignItems: "center",
     gap: 12,
+    alignItems: "center",
+    padding: 12,
   },
   adTitle: {
     fontWeight: "bold",
-    // ...andre stiler for tittelen...
+  },
+  adBody: {
+    fontWeight: "regular",
   },
   imageStyling: {
-    height: 80,
-    width: 80,
+    height: 64,
+    width: 64,
+    borderRadius: 100,
   },
 });
 

@@ -11,6 +11,7 @@ import CheckIcon from "../../assets/SVGs/CheckIcon";
 
 const AgreementProposalCard = ({
   sendProposal,
+  onAccept,
   status,
   proposalData,
   isUserAdCreator,
@@ -124,9 +125,7 @@ const AgreementProposalCard = ({
               >
                 <TouchableOpacity
                   style={[styles.btn, { backgroundColor: colors.lightGreen }]}
-                  onPress={() => {
-                    /* handle acceptance */
-                  }}
+                  onPress={() => onAccept(proposalData._id)} // Anta at proposalData inneholder en _id
                 >
                   <CheckIcon />
                   <Text style={[styles.btnText, { color: colors.green }]}>
@@ -135,9 +134,7 @@ const AgreementProposalCard = ({
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.btn, { backgroundColor: colors.lightRed }]}
-                  onPress={() => {
-                    /* handle rejection */
-                  }}
+                  onPress={""}
                 >
                   <Text style={[styles.btnText, { color: colors.red }]}>
                     Avslå
@@ -165,6 +162,41 @@ const AgreementProposalCard = ({
                 </TouchableOpacity>
               </View>
             )}
+          </View>
+        </>
+      )}
+
+      {status === "accepted" && (
+        // Visning av sendt tilbud
+        <>
+          <Text style={styles.headerText}>Tilbud godtatt!</Text>
+          <View
+            style={{
+              flexDirection: "column",
+              gap: 20,
+              justifyContent: "center",
+            }}
+          >
+            <View style={styles.optionsContainer}>
+              {/* Vis valgmuligheter for pristype */}
+              <TouchableOpacity
+                style={[
+                  styles.optionCard,
+                  selectedPriceType === "hourly" && styles.selectedOption,
+                ]}
+              >
+                <Text>Timepris</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.optionCard,
+                  selectedPriceType === "total" && styles.selectedOption,
+                ]}
+              >
+                <Text>Fastpris</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.priceInput}>{`${price}`}</Text>
           </View>
         </>
       )}
