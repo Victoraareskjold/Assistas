@@ -18,10 +18,12 @@ import {
   getDoc,
   updateDoc,
   setDoc,
+  getDocs,
 } from "firebase/firestore";
 import colors from "../../styles/colors";
 import ChatAdCard from "../components/ChatAdCard";
 import AgreementProposalCard from "../components/AgreementProposalCard";
+import SubmittedAgreementProposalCard from "../components/SubmittedAgreementProposalCard";
 import WorkSessionCard from "../components/WorkSessionCard";
 
 const ChatScreen = ({ route, navigation }) => {
@@ -37,6 +39,7 @@ const ChatScreen = ({ route, navigation }) => {
   });
   const [isUserAdCreator, setIsUserAdCreator] = useState(false);
   const [agreementMessageId, setAgreementMessageId] = useState(null);
+  const [proposalData, setProposalData] = useState({});
 
   useEffect(() => {
     const fetchOtherParticipantInfo = async () => {
@@ -119,8 +122,10 @@ const ChatScreen = ({ route, navigation }) => {
     const unsubscribe = onSnapshot(q, async (querySnapshot) => {
       const fetchedMessages = await Promise.all(
         querySnapshot.docs.map(async (doc) => {
-          const messageData = doc.data();
+          const messageData = doc.data(); // Flytt denne over imageUrl
+
           const imageUrl = await fetchUserProfileImage(messageData.sentBy);
+
           return {
             _id: doc.id,
             text: messageData.text,
@@ -131,6 +136,8 @@ const ChatScreen = ({ route, navigation }) => {
               name: messageData.userName,
             },
             customType: messageData.customType,
+            status: messageData.status,
+            proposalData: messageData.offerDetails, // Legg merke til her
           };
         })
       );
@@ -164,61 +171,77 @@ const ChatScreen = ({ route, navigation }) => {
     }
   };
 
-  const sendAgreementCard = async () => {
-    const agreementId = Math.random().toString(36).substring(7); // Unique ID for the message
-    const message = {
-      _id: agreementId,
-      text: "agreement proposal",
+  const sendAgreementCard = () => {
+    // Opprett en ny melding for 'pending' avtalekort
+    const newMessage = {
+      _id: Math.random().toString(36).substring(7),
+      text: "", // ingen tekst, siden dette vil være et spesialkort
       createdAt: new Date(),
       user: {
         _id: auth.currentUser.uid,
+        // andre nødvendige brukeropplysninger
       },
       customType: "agreementProposal",
       status: "pending",
     };
 
-    onSend([message]); // Send message to GiftedChat
-    setAgreementMessageId(agreementId); // Saving the new agreement message ID for future reference
+    // Legg til den nye meldingen i eksisterende meldinger
+    setMessages((previousMessages) =>
+      GiftedChat.append(previousMessages, [newMessage])
+    );
 
-    // Oppretter et nytt tilbud i "offers" samlingen
-    const offerRef = doc(db, `chats/${chatId}/offers`, agreementId);
-    await setDoc(offerRef, {
-      status: "pending", // Initial status
-      createdAt: new Date(),
-      proposalData: {}, // Empty data, will be filled later
-    });
+    setProposalData({});
   };
 
   const sendProposal = async (selectedPriceType, price) => {
-    // Sjekk for nødvendig input
     if (!selectedPriceType || !price) {
       console.error("Missing required fields.");
       return;
     }
 
-    // Sjekk at vi har en gyldig agreementMessageId
-    if (!agreementMessageId) {
-      console.error("Invalid agreementMessageId. Cannot update.");
-      return;
-    }
-
-    // Logg ID og prøv å oppdatere
-    console.log("Updating offer with ID:", agreementMessageId);
     try {
-      const offerRef = doc(db, `chats/${chatId}/offers`, agreementMessageId);
-      await updateDoc(offerRef, {
-        "proposalData.selectedPriceType": selectedPriceType,
-        "proposalData.price": price,
-        status: "submitted",
-      });
+      // Legg til meldingen som representerer dette tilbudet i chat
+      const messageRef = await addDoc(
+        collection(db, `chats/${chatId}/messages`),
+        {
+          text: `Tilbud: ${price} (${selectedPriceType})`,
+          sentAt: new Date(),
+          sentBy: auth.currentUser.uid,
+          customType: "agreementProposal", // Markere meldingen som et tilbud
+          offerDetails: {
+            selectedPriceType,
+            price,
+          },
+          status: "submitted",
+        }
+      );
 
-      console.log("Offer updated successfully.");
+      // Antar at tilbudet ble sendt vellykket hvis ingen feil ble kastet
+      updateAgreementStatusInState(messageRef.id, "submitted");
     } catch (error) {
-      console.error("Error updating offer:", error);
+      console.error("Error submitting offer:", error);
     }
   };
 
-  /* Undo en gang til for at det funker!! */
+  const updateAgreementStatusInState = (messageId, newStatus) => {
+    setMessages((prevMessages) => {
+      return prevMessages.map((message) => {
+        if (
+          message._id === messageId &&
+          message.customType === "agreementProposal"
+        ) {
+          return { ...message, status: newStatus };
+        }
+        return message;
+      });
+    });
+  };
+
+  const doesAgreementRequestExist = () => {
+    return messages.some(
+      (message) => message.customType === "agreementProposal"
+    );
+  };
 
   const sendStartWorkRequest = () => {
     const existingSession = messages.find(
@@ -358,13 +381,13 @@ const ChatScreen = ({ route, navigation }) => {
 
   const CustomButtons = () => (
     <View>
-      {
+      {!isUserAdCreator && !doesAgreementRequestExist() && (
         <TouchableOpacity onPress={sendAgreementCard} style={styles.requestBtn}>
           <Text>Inngå Avtale</Text>
         </TouchableOpacity>
-      }
+      )}
 
-      {!doesWorkSessionExist() && (
+      {!isUserAdCreator && !doesWorkSessionExist() && (
         <TouchableOpacity
           onPress={sendStartWorkRequest}
           style={styles.requestBtn}
@@ -379,12 +402,16 @@ const ChatScreen = ({ route, navigation }) => {
     const { currentMessage } = props;
 
     /* Agreement request */
-    if (props.currentMessage.customType === "agreementProposal") {
-      // Sjekk status av avtaleforslaget og returner tilsvarende komponent
-      if (props.currentMessage.status === "submitted") {
-        return <SubmittedAgreementProposalCard {...props} />;
-      }
-      return <AgreementProposalCard {...props} />;
+    if (currentMessage.customType === "agreementProposal") {
+      return (
+        <AgreementProposalCard
+          {...props}
+          status={currentMessage.status} // Send statusen for denne meldinge
+          proposalData={currentMessage.proposalData || {}}
+          sendProposal={sendProposal}
+          isUserAdCreator={isUserAdCreator}
+        />
+      );
     }
 
     /* Work request */
@@ -430,6 +457,7 @@ const ChatScreen = ({ route, navigation }) => {
         messages={messages}
         onSend={(messages) => onSend(messages)}
         sendProposal={sendProposal}
+        proposalData={proposalData}
         user={{ _id: auth.currentUser.uid }}
         renderMessage={renderMessage}
         placeholder={"Skriv her..."}
