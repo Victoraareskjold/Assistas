@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -8,31 +8,28 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Image,
+  Touchable,
 } from "react-native";
 
 import { useNavigation } from "@react-navigation/native";
-import { useState } from "react";
 
-import { auth, db, storage } from "../../firebase";
+import { auth, storage } from "../../firebase";
 import {
   getFirestore,
   doc,
-  setDoc,
   collection,
   addDoc,
   getDoc,
   updateDoc,
 } from "firebase/firestore";
 
-import { firestore } from "../../firebase"; // Importer firestore fra din firebase-config
+import { firestore } from "../../firebase";
 
-import containerStyles from "../../styles/containerStyles";
-import placeholderStyles from "../../styles/placeholderStyles";
-import buttons from "../../styles/buttons";
-import fonts from "../../styles/fonts";
-import colors from "../../styles/colors";
-
+import TitleStep from "../components/TitleStep";
 import CategorySelector from "../components/CategorySelector";
+import DescriptionStep from "../components/DescriptionStep";
+import LocationStep from "../components/LocationStep";
+import ProgressBar from "../components/ProgressBar"; // Oppdater stien til komponenten
 
 import * as ImagePicker from "expo-image-picker";
 import {
@@ -40,27 +37,107 @@ import {
   uploadBytes,
   getDownloadURL,
 } from "firebase/storage";
+import buttons from "../../styles/buttons";
+import fonts from "../../styles/fonts";
+import containerStyles from "../../styles/containerStyles";
 
 export default function CreateAd({ route }) {
   const navigation = useNavigation();
+  const [currentStep, setCurrentStep] = useState(1);
 
   const [imageUri, setImageUri] = useState(null);
 
-  const [overskrift, setOverskrift] = useState("");
-  const [beskrivelse, setBeskrivelse] = useState("");
-  const [sted, setSted] = useState("");
-  const [status, setStatus] = useState("Ikke startet"); // Default status
-  const [kategori, setKategori] = useState("");
-
-  const [isUploading, setIsUploading] = useState(false); // Ny tilstandsvariabel
-
+  const [isUploading, setIsUploading] = useState(false);
   const [formErrorMessage, setFormErrorMessage] = useState("");
+  const [adData, setAdData] = useState({
+    overskrift: "",
+    beskrivelse: "",
+    sted: "",
+    kategori: [],
+    imageUri: null,
+  });
+
+  const goToNextStep = (newData) => {
+    setAdData({ ...adData, ...newData });
+    setCurrentStep(currentStep + 1);
+  };
+
+  /* Backhandler */
+  useEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => {
+            if (currentStep > 1) {
+              setCurrentStep(currentStep - 1);
+            } else {
+              navigation.goBack();
+            }
+          }}
+        >
+          <Image
+            source={require("../../assets/icon.png")}
+            style={{ width: 32, height: 32 }}
+          />
+        </TouchableOpacity>
+      ),
+    });
+  }, [currentStep, navigation]);
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <TitleStep initialTitle={adData.overskrift} onNext={goToNextStep} />
+        );
+      case 2:
+        return (
+          <CategorySelector
+            selectedCategories={adData.kategori} // Pass the saved categories
+            onSelectCategories={(kategori) =>
+              setAdData({ ...adData, kategori })
+            }
+            onNext={goToNextStep}
+          />
+        );
+      case 3:
+        return (
+          <DescriptionStep
+            initialDescription={adData.beskrivelse}
+            onNext={goToNextStep}
+          />
+        );
+      case 4:
+        return (
+          <LocationStep
+            initialLocation={adData.sted}
+            initialAddress={adData.adresse}
+            onNext={goToNextStep}
+          />
+        );
+      case 5: // Anta at dette er sluttpunktet
+        return (
+          <View style={containerStyles.defaultContainer}>
+            <Text>Er du klar til å opprette annonsen?</Text>
+            <TouchableOpacity onPress={leggTilAnnonse} style={buttons.nextStep}>
+              <Text style={fonts.primaryBtn}>Opprett Annonse</Text>
+            </TouchableOpacity>
+            {formErrorMessage ? (
+              <Text style={styles.error}>{formErrorMessage}</Text>
+            ) : null}
+          </View>
+        );
+      default:
+        return <Text>Noe gikk galt, prøv igjen!</Text>;
+    }
+  };
 
   const isFormValid = () => {
     return (
-      overskrift.trim() !== "" &&
-      beskrivelse.trim() !== "" &&
-      sted.trim() !== ""
+      adData.overskrift.trim() !== "" &&
+      adData.beskrivelse.trim() !== "" &&
+      adData.sted.trim() !== "" &&
+      adData.kategori.length > 0
     );
   };
 
@@ -80,13 +157,13 @@ export default function CreateAd({ route }) {
       const db = getFirestore(firestore);
       const userUID = auth.currentUser.uid;
       const annonseRef = await addDoc(collection(db, "annonser"), {
-        overskrift,
-        beskrivelse,
-        sted,
-        kategori,
+        overskrift: adData.overskrift,
+        beskrivelse: adData.beskrivelse,
+        sted: adData.sted,
+        kategori: adData.kategori,
         uid: userUID,
-        status,
-        bildeUrl: imageUrl || null, // Sett bildeUrl til null hvis imageUrl ikke er tilgjengelig
+        status: adData.status || "Ikke startet", // Assuming status is part of adData or provide a default value
+        bildeUrl: imageUrl || null,
       });
 
       // Hent og oppdater brukerdata
@@ -137,66 +214,8 @@ export default function CreateAd({ route }) {
     <View style={{ backgroundColor: "#FFF", flex: 1 }}>
       <SafeAreaView />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" enabled>
-        {imageUri && (
-          <Image
-            source={{ uri: imageUri }}
-            style={{ width: "100%", height: 200 }}
-          />
-        )}
-        <View style={containerStyles.defaultContainer}>
-          <TouchableOpacity onPress={pickImage}>
-            <Text>Last opp bilde</Text>
-          </TouchableOpacity>
-          {formErrorMessage !== "" && (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorMessage}>{formErrorMessage}</Text>
-            </View>
-          )}
-
-          <Text>Overskrift</Text>
-          <TextInput
-            style={placeholderStyles.simple}
-            placeholder="Overskrift"
-            value={overskrift}
-            onChangeText={(text) => setOverskrift(text)}
-          />
-
-          <View style={{ marginBottom: 20 }}>
-            <CategorySelector
-              onSelectCategory={(selectedCategory) =>
-                setKategori(selectedCategory)
-              }
-            />
-          </View>
-
-          <Text>Beskrivelse</Text>
-          <TextInput
-            style={placeholderStyles.bigbox}
-            placeholder="Jeg trenger hjelp til..."
-            numberOfLines={5}
-            value={beskrivelse}
-            onChangeText={(text) => setBeskrivelse(text)}
-            multiline={true}
-          />
-
-          <Text>Sted</Text>
-          <TextInput
-            style={placeholderStyles.simple}
-            placeholder="Karl Johans Gate 1, 0159 Oslo"
-            value={sted}
-            onChangeText={(text) => setSted(text)}
-          />
-
-          <TouchableOpacity
-            style={buttons.btn1}
-            onPress={leggTilAnnonse}
-            disabled={isUploading} // Deaktiver knappen under opplasting
-          >
-            <Text style={[fonts.btnBody, { color: "blue" }]}>
-              {isUploading ? "Oppretter Annonse..." : "Opprett annonse"}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <ProgressBar totalSteps={5} currentStep={currentStep} />
+        {renderStep()}
       </KeyboardAvoidingView>
     </View>
   );

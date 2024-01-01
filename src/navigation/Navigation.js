@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Image, View } from "react-native";
+import { Image, TouchableOpacity } from "react-native";
 
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -129,9 +129,12 @@ function DinSideStackGroup() {
         component={TabGroup}
       />
       <DinSideStack.Screen
-        options={{ headerShown: true, headerTitle: "Opprett annonse" }}
         name="CreateAd"
         component={CreateAd}
+        options={({ navigation }) => ({
+          headerShown: true,
+          headerTitle: "Opprett annonse",
+        })}
       />
       <DinSideStack.Screen
         options={{ headerShown: true, headerTitle: "Alle kategorier" }}

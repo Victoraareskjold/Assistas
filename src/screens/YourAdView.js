@@ -95,14 +95,19 @@ const YourAdView = ({ route }) => {
           <Text style={styles.text}>{newOverskrift}</Text>
         )}
 
-        <View>
-          {category && (
-            <View style={styles.categoryContainer}>
-              <Text style={styles.categoryText}>{category.text}</Text>
-              <Image source={category.icon} style={styles.icon} />
-            </View>
-          )}
-        </View>
+        <Text style={styles.label}>Kategorier</Text>
+        {adData.kategori && adData.kategori.length > 0 ? (
+          <View style={styles.categoriesContainer}>
+            {adData.kategori.map((kategori, index) => (
+              <View key={index} style={styles.categoryContainer}>
+                <Text style={styles.categoryText}>{kategori}</Text>
+                {/* Fjern Image hvis du ikke har ikoner for hver kategori eller oppdater til å vise riktig ikon basert på kategorien */}
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Text style={styles.text}>Ingen kategorier valgt</Text>
+        )}
 
         <Text style={styles.label}>Beskrivelse</Text>
         {isEditing ? (

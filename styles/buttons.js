@@ -28,4 +28,10 @@ export default StyleSheet.create({
     paddingVertical: 24,
     flex: 1,
   },
+  nextStep: {
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    paddingVertical: 12,
+    borderRadius: 50,
+  },
 });

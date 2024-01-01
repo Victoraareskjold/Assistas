@@ -33,7 +33,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
     alignItems: "center",
-    padding: 12,
   },
   adTitle: {
     fontWeight: "bold",
@@ -42,9 +41,8 @@ const styles = StyleSheet.create({
     fontWeight: "regular",
   },
   imageStyling: {
-    height: 64,
-    width: 64,
-    borderRadius: 100,
+    height: 80,
+    width: 80,
   },
 });
 
