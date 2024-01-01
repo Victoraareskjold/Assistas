@@ -19,13 +19,15 @@ import {
   onSnapshot,
   doc,
   getDoc,
-} from "firebase/firestore"; // Correct import statements
+} from "firebase/firestore";
+import { Ionicons } from "@expo/vector-icons";
 
 import AdCard from "../components/AdCard";
 import { categories } from "../components/Categories";
 import ProfileModal from "../components/ProfileModal";
 import SearchBar from "../components/SearchBar";
 
+import colors from "../../styles/colors";
 import fonts from "../../styles/fonts";
 import images from "../../styles/images";
 import containerStyles from "../../styles/containerStyles";
@@ -195,7 +197,7 @@ export default function DinSide() {
 
       {/* Pågående arbeid */}
       {adData.length > 0 && (
-        <View style={containerStyles.defaultContainer}>
+        <View style={containerStyles.contentContainer}>
           <Text style={fonts.subHeader}>Aktive jobber & søknader</Text>
 
           <View style={{ marginTop: 20 }}>
@@ -213,49 +215,16 @@ export default function DinSide() {
       )}
 
       {/* Hva trenger du hjelp med? */}
-      <View style={containerStyles.defaultContainer}>
+      <View style={containerStyles.contentContainer}>
         <Text style={fonts.subHeader}>Hva trenger du hjelp med?</Text>
-
-        {/* Searchbar */}
-        {/* <View style={{ marginTop: 12 }}>
-          <SearchBar placeholder={"Søk etter kategorier"} />
-        </View> */}
-
-        {/* cards */}
-        {/* <ScrollView
-          style={styles.cardGrid}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-        >
-          {firstSixCategories.map((category) => (
-            <WorkCard
-              key={category.id}
-              color={category.color}
-              icon={category.icon}
-              text={category.text}
-              onPress={() => {
-                if (category.id === 9) {
-                  // Behandling for det siste kortet
-                  // For eksempel, navigasjon til en annen skjerm
-                  navigation.navigate("AllCategories");
-                } else {
-                  // Behandling for de andre kortene
-                  navigation.navigate("CreateAd", { category: category.text });
-                }
-              }}
-            />
-          ))}
-        </ScrollView> */}
         <View style={styles.buttonContainer}>
           {/* create ad */}
           <TouchableOpacity
             style={buttons.iconButton}
             onPress={() => navigation.navigate("Ads")}
           >
-            <Image
-              style={{ width: 24, height: 24, marginBottom: 12 }}
-              source={require("../../assets/search.png")}
-            />
+            <Ionicons name="search" size={24} color={colors.blue} />
+
             <Text style={fonts.btnBody}>Finn arbeid</Text>
           </TouchableOpacity>
 
@@ -264,17 +233,15 @@ export default function DinSide() {
             style={buttons.iconButton}
             onPress={() => navigation.navigate("CreateAd")}
           >
-            <Image
-              style={{ width: 24, height: 24, marginBottom: 12 }}
-              source={require("../../assets/plus.png")}
-            />
+            <Ionicons name="add" size={32} color={colors.blue} />
+
             <Text style={fonts.btnBody}>Opprett annonse</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Pågående arbeid */}
-      <View style={containerStyles.defaultContainer}>
+      {/* Fullfør profil */}
+      <View style={containerStyles.contentContainer}>
         <Text style={fonts.subHeader}>Fullfør oppsett av profil</Text>
 
         <View style={{ marginTop: 16 }}></View>

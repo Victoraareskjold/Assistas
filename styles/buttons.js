@@ -20,13 +20,14 @@ export default StyleSheet.create({
     marginBottom: 12,
   },
   iconButton: {
-    backgroundColor: colors.lightGrey,
+    backgroundColor: colors.lightBlue,
     width: "50%",
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 5,
     paddingVertical: 24,
     flex: 1,
+    gap: 12,
   },
   nextStep: {
     backgroundColor: colors.primary,

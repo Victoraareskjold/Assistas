@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import React from "react";
+import { Ionicons } from "@expo/vector-icons"; // Legg til dette
 
 import { categories } from "./Categories";
 import colors from "../../styles/colors";
@@ -25,14 +26,14 @@ const AdCard = (props) => {
       onPress={() => navigation.navigate("YourAdView", { adData: adData })}
     >
       <View style={styles.textContainer}>
-        <Image
-          source={
-            adData.bildeUrl
-              ? { uri: adData.bildeUrl }
-              : require("../../assets/vedBilde.png")
-          }
-          style={styles.image}
-        />
+        {adData.bildeUrl ? (
+          <Image source={{ uri: adData.bildeUrl }} style={styles.image} />
+        ) : (
+          // Viser et Ionicon hvis bilde ikke finnes
+          <View style={styles.imagePlaceholder}>
+            <Ionicons name="image-outline" size={64} color={colors.blue} />
+          </View>
+        )}
 
         <View style={{ padding: 16 }}>
           <View
@@ -91,6 +92,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.lightGrey,
     overflow: "hidden",
+  },
+  imagePlaceholder: {
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    height: 140,
+    backgroundColor: colors.lightBlue,
   },
   textContainer: {
     padding: 0,

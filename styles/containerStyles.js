@@ -6,6 +6,11 @@ export default {
     marginTop: 32,
     gap: 20,
   },
+  contentContainer: {
+    paddingHorizontal: 20,
+    marginTop: 32,
+    gap: 0,
+  },
   backgroundContainer: {
     backgroundColor: colors.white,
     flex: 1,

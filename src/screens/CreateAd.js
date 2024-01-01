@@ -22,6 +22,7 @@ import {
   getDoc,
   updateDoc,
 } from "firebase/firestore";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { firestore } from "../../firebase";
 
@@ -210,11 +211,24 @@ export default function CreateAd({ route }) {
     return downloadUrl;
   };
 
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    } else {
+      navigation.goBack();
+    }
+  };
+
   return (
     <View style={{ backgroundColor: "#FFF", flex: 1 }}>
       <SafeAreaView />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" enabled>
-        <ProgressBar totalSteps={5} currentStep={currentStep} />
+        <View style={styles.paginationContainer}>
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <Ionicons name="chevron-back" size={28} color="black" />
+          </TouchableOpacity>
+          <ProgressBar totalSteps={5} currentStep={currentStep} />
+        </View>
         {renderStep()}
       </KeyboardAvoidingView>
     </View>
@@ -222,6 +236,12 @@ export default function CreateAd({ route }) {
 }
 
 const styles = StyleSheet.create({
+  paginationContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 20,
+    paddingHorizontal: 20,
+  },
   errorContainer: {
     marginBottom: 12,
   },

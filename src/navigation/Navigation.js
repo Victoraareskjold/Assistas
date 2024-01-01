@@ -132,8 +132,8 @@ function DinSideStackGroup() {
         name="CreateAd"
         component={CreateAd}
         options={({ navigation }) => ({
-          headerShown: true,
-          headerTitle: "Opprett annonse",
+          headerShown: false,
+          gestureEnabled: false,
         })}
       />
       <DinSideStack.Screen

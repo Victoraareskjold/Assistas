@@ -5,6 +5,7 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  styles,
 } from "react-native";
 import containerStyles from "../../styles/containerStyles";
 import placeholderStyles from "../../styles/placeholderStyles";
@@ -13,6 +14,16 @@ import buttons from "../../styles/buttons";
 
 export default function TitleStep({ onNext, initialTitle }) {
   const [title, setTitle] = useState(initialTitle);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleNext = () => {
+    if (!title.trim()) {
+      setErrorMessage("Du må fylle ut tittelen før du går videre."); // Oppdaterer feilmeldingen
+    } else {
+      onNext({ overskrift: title });
+      setErrorMessage(""); // Nullstiller feilmeldingen hvis alt er ok
+    }
+  };
 
   return (
     <View style={containerStyles.defaultContainer}>
@@ -24,17 +35,12 @@ export default function TitleStep({ onNext, initialTitle }) {
         onChangeText={setTitle}
         placeholderTextColor={"rgba(39, 39, 39, 0.5)"}
       />
-
-      <TouchableOpacity
-        style={buttons.nextStep}
-        onPress={() => onNext({ overskrift: title })}
-      >
+      {errorMessage ? (
+        <Text style={fonts.errorText}>{errorMessage}</Text>
+      ) : null}
+      <TouchableOpacity style={buttons.nextStep} onPress={handleNext}>
         <Text style={fonts.primaryBtn}>Neste</Text>
       </TouchableOpacity>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  // Dine stiler her ...
-});

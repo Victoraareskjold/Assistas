@@ -23,6 +23,7 @@ export default function CategorySelector({
   const [selectedCategories, setSelectedCategories] = useState(
     initialSelectedCategories || []
   );
+  const [errorMessage, setErrorMessage] = useState(""); // Ny state for feilmelding
 
   const handleSelectCategory = (category) => {
     if (selectedCategories.includes(category)) {
@@ -32,12 +33,23 @@ export default function CategorySelector({
     }
   };
 
+  const handleNext = () => {
+    if (selectedCategories.length === 0) {
+      setErrorMessage("Du må velge minst én kategori."); // Oppdaterer feilmeldingen
+    } else {
+      onNext({ kategori: selectedCategories });
+      setErrorMessage(""); // Nullstiller feilmeldingen hvis alt er ok
+    }
+  };
+
   return (
     <>
       <View style={containerStyles.defaultContainer}>
         <View style={{ gap: 4 }}>
           <Text style={fonts.subHeader}>Velg kategori</Text>
-          <Text style={fonts.body}>Du kan velge flere</Text>
+          <Text style={[fonts.body, { opacity: 0.75 }]}>
+            Du kan velge flere kategorier
+          </Text>
         </View>
         <View style={{ gap: 12 }}>
           {categories.map((category) => {
@@ -67,10 +79,11 @@ export default function CategorySelector({
             );
           })}
         </View>
-        <TouchableOpacity
-          style={buttons.nextStep}
-          onPress={() => onNext({ kategori: selectedCategories })}
-        >
+        {errorMessage ? (
+          <Text style={fonts.errorText}>{errorMessage}</Text>
+        ) : null}
+
+        <TouchableOpacity style={buttons.nextStep} onPress={handleNext}>
           <Text style={fonts.primaryBtn}>Neste</Text>
         </TouchableOpacity>
       </View>
@@ -92,8 +105,8 @@ const styles = StyleSheet.create({
     borderColor: colors.primary, // Sett din ønskede farge for valgte kort
   },
   text: {
-    marginLeft: 12, // Gi plass mellom radio button og tekst
-    // Stiler for teksten på kortet
+    marginLeft: 12,
+    fontSize: 14,
   },
   textSelected: {
     fontWeight: "600",

@@ -39,8 +39,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#E1E8F9", // Bakgrunnsfarge for ubefylt område
     borderRadius: 100,
     overflow: "hidden",
-    marginHorizontal: 20,
-    marginTop: 20,
+    width: "100%",
+    flex: 1,
   },
   filler: {
     height: "100%",
